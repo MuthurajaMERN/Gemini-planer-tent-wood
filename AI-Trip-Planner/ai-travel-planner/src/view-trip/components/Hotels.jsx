@@ -5,12 +5,10 @@ import HotelCardItem from './HotelCardItem'; // Ensure this import path is corre
 function Hotels({ trip }) {
   // Extract hotel options from the trip object
   const hotelOptions = trip?.tripData?.hotelOptions || [];
-
   // Check if hotelOptions exists and is an array
   const hasHotels = Array.isArray(hotelOptions) && hotelOptions.length > 0;
 
   // Log hotelOptions to verify its structure
-  console.log('Hotel Options:', hotelOptions);
 
   return (
     <div className="mb-10">

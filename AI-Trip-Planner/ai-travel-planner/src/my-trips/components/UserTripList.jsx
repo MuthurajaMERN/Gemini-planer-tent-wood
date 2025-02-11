@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import UserTripCardItem from './UserTripCardItem'; // Ensure this import path is correct
 
-function UserTripList() {
+export function UserTripList() {
     // The state to store all user trips
     const [trips, setTrips] = useState([
         // Sample trips; replace with actual trips data from API or database
@@ -50,4 +50,4 @@ function UserTripList() {
     );
 }
 
-export
+

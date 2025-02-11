@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import placeImage from '../place.png'; // Ensure this path is correct
 
-// Remove Unsplash API URL and key
-// const UNSPLASH_API_URL = 'https://api.unsplash.com/search/photos';
-// const UNSPLASH_ACCESS_KEY = import.meta.env.VITE_UNSPLASH_ACCESS_KEY; // Remove Unsplash key
-
+const UNSPLASH_API_URL = 'https://api.unsplash.com/search/photos';
+const UNSPLASH_ACCESS_KEY = import.meta.env.VITE_UNSPLASH_ACCESS_KEY; // Correctly access the environment variable
 const LOCATIONIQ_API_KEY = 'pk.c51ba700c7aa3288f19b95fbaddbaeff'; // Replace with your LocationIQ API key
 const PHOTO_REF_URL = 'https://via.placeholder.com/1000?text=Photo+Not+Available';
 
 function HotelCardItem({ hotel }) {
-    const [photoUrl, setPhotoUrl] = useState(PHOTO_REF_URL); // Default to placeholder
+    const [photoUrl, setPhotoUrl] = useState(PHOTO_REF_URL);
     const [userLocation, setUserLocation] = useState(null);
     const [searchResults, setSearchResults] = useState([]);
 
@@ -38,7 +37,7 @@ function HotelCardItem({ hotel }) {
     }, []);
 
     useEffect(() => {
-        // Fallback: If no photo is found, we just use the placeholder
+        // Fetch hotel photo
         const fetchHotelPhoto = async () => {
             if (!hotel || !hotel.hotelName || !hotel.hotelAddress) {
                 console.warn('Missing hotel data:', hotel);
@@ -48,9 +47,26 @@ function HotelCardItem({ hotel }) {
             const query = `${hotel.hotelName} ${hotel.hotelAddress}`;
             console.log('Fetching photo for:', query);
 
-            // Instead of fetching from Unsplash, use a fallback image (or any public image source)
-            // Here, we simply use the default placeholder image, but you can replace this with any API call or static image.
-            setPhotoUrl(PHOTO_REF_URL); // Use a placeholder image as fallback
+            try {
+                const response = await axios.get(UNSPLASH_API_URL, {
+                    params: {
+                        query: query,
+                        client_id: UNSPLASH_ACCESS_KEY,
+                        per_page: 1,
+                    },
+                });
+
+                const photo = response.data.results[0];
+                if (photo && photo.urls && photo.urls.small) {
+                    setPhotoUrl(photo.urls.small);
+                } else {
+                    console.warn('No photos found for query:', query);
+                    setPhotoUrl(PHOTO_REF_URL); // Use placeholder if no photo found
+                }
+            } catch (error) {
+                console.error('Error fetching hotel photo:', error.message);
+                setPhotoUrl(PHOTO_REF_URL); // Fallback to placeholder in case of error
+            }
         };
 
         fetchHotelPhoto();
