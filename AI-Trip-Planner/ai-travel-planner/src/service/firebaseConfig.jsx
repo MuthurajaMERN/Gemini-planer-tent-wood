@@ -10,7 +10,7 @@ import {getFirestore} from "firebase/firestore";
 const firebaseConfig = {
   apiKey: "AIzaSyBLFYteNNXSLh8r4yJXmvljAdW__zUVh-g",
   authDomain: "ai-travel-planner-427418.firebaseapp.com",
-  projectId: "ai-travel-planner-427418",
+  projectId: "ai-travel-planner-427418",  
   storageBucket: "ai-travel-planner-427418.appspot.com",
   messagingSenderId: "710161050205",
   appId: "1:710161050205:web:679d18cf49fddce6eafbb4",

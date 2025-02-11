@@ -30,6 +30,7 @@ function ViewTrip() {
       toast('No trip found!');
     }
   }
+  console.log(trip,"from the trip")
   return (
     <div className='p-10 md:px-20 lg:px-44 xl:px-56'>
       {/* Information Section */}

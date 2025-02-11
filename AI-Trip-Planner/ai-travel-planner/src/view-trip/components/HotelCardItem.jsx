@@ -4,14 +4,18 @@ import axios from 'axios';
 import placeImage from '../place.png'; // Ensure this path is correct
 
 const UNSPLASH_API_URL = 'https://api.unsplash.com/search/photos';
-const UNSPLASH_ACCESS_KEY = import.meta.env.VITE_UNSPLASH_ACCESS_KEY; // Correctly access the environment variable
-const LOCATIONIQ_API_KEY = 'pk.c51ba700c7aa3288f19b95fbaddbaeff'; // Replace with your LocationIQ API key
+const UNSPLASH_ACCESS_KEY = import.meta.env.VITE_UNSPLASH_ACCESS_KEY;
+const LOCATIONIQ_API_KEY = 'pk.c51ba700c7aa3288f19b95fbaddbaeff';
+
 const PHOTO_REF_URL = 'https://via.placeholder.com/1000?text=Photo+Not+Available';
 
 function HotelCardItem({ hotel }) {
     const [photoUrl, setPhotoUrl] = useState(PHOTO_REF_URL);
     const [userLocation, setUserLocation] = useState(null);
     const [searchResults, setSearchResults] = useState([]);
+
+    /** ✅ Use Cached Image Results to Reduce API Calls */
+    const photoCache = new Map();
 
     useEffect(() => {
         // Function to get user location
@@ -37,35 +41,36 @@ function HotelCardItem({ hotel }) {
     }, []);
 
     useEffect(() => {
-        // Fetch hotel photo
+        /** ✅ Fetch Hotel Photo with Optimized API Calls */
         const fetchHotelPhoto = async () => {
-            if (!hotel || !hotel.hotelName || !hotel.hotelAddress) {
+            if (!hotel?.hotelName || !hotel?.hotelAddress) {
                 console.warn('Missing hotel data:', hotel);
                 return;
             }
 
             const query = `${hotel.hotelName} ${hotel.hotelAddress}`;
-            console.log('Fetching photo for:', query);
+            
+            /** ✅ Check if Image Already Cached */
+            if (photoCache.has(query)) {
+                setPhotoUrl(photoCache.get(query));
+                return;
+            }
 
+            console.log('Fetching photo for:', query);
             try {
                 const response = await axios.get(UNSPLASH_API_URL, {
-                    params: {
-                        query: query,
-                        client_id: UNSPLASH_ACCESS_KEY,
-                        per_page: 1,
-                    },
+                    params: { query, per_page: 1 },
+                    headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` }
                 });
 
                 const photo = response.data.results[0];
-                if (photo && photo.urls && photo.urls.small) {
-                    setPhotoUrl(photo.urls.small);
-                } else {
-                    console.warn('No photos found for query:', query);
-                    setPhotoUrl(PHOTO_REF_URL); // Use placeholder if no photo found
-                }
+                const imageUrl = photo?.urls?.small || PHOTO_REF_URL;
+
+                photoCache.set(query, imageUrl); // Cache the image
+                setPhotoUrl(imageUrl);
             } catch (error) {
                 console.error('Error fetching hotel photo:', error.message);
-                setPhotoUrl(PHOTO_REF_URL); // Fallback to placeholder in case of error
+                setPhotoUrl(PHOTO_REF_URL);
             }
         };
 
@@ -73,15 +78,21 @@ function HotelCardItem({ hotel }) {
     }, [hotel]);
 
     useEffect(() => {
-        // Function to search for hotels or addresses using LocationIQ API
+        /** ✅ Reverse Geocode to Find Nearby Hotels */
         const searchLocation = async (latitude, longitude) => {
             try {
-                const response = await fetch(`https://us1.locationiq.com/v1/search.php?key=${LOCATIONIQ_API_KEY}&q=${latitude},${longitude}&format=json`);
-                const data = await response.json();
+                const response = await axios.get(`https://us1.locationiq.com/v1/reverse.php`, {
+                    params: {
+                        key: LOCATIONIQ_API_KEY,
+                        lat: latitude,
+                        lon: longitude,
+                        format: "json",
+                    },
+                });
 
-                if (data && data.length > 0) {
-                    setSearchResults(data);
-                    console.log('Search Results:', data);
+                if (response.data?.display_name) {
+                    setSearchResults(response.data);
+                    console.log('LocationIQ Search Results:', response.data);
                 } else {
                     console.warn('No results found for location:', latitude, longitude);
                 }
@@ -95,7 +106,9 @@ function HotelCardItem({ hotel }) {
         }
     }, [userLocation]);
 
-    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${hotel.hotelName}, ${hotel.hotelAddress}`)}${hotel.latitude ? `&ll=${hotel.latitude},${hotel.longitude}` : ''}`;
+    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        `${hotel.hotelName}, ${hotel.hotelAddress}`
+    )}${hotel.latitude ? `&ll=${hotel.latitude},${hotel.longitude}` : ''}`;
 
     return (
         <Link
@@ -107,7 +120,7 @@ function HotelCardItem({ hotel }) {
             <div className="rounded-lg bg-white shadow-lg p-4">
                 <img 
                     src={photoUrl || placeImage} 
-                    alt={`${hotel.hotelName || 'Hotel'}`} 
+                    alt={`${hotel?.hotelName || 'Hotel'}`} 
                     className="w-full h-48 object-cover rounded-lg mb-4"
                 />
                 <div className="flex flex-col gap-2">

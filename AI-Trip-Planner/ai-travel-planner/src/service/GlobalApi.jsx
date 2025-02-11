@@ -1,16 +1,27 @@
-import axios from 'axios';
+import axios from "axios";
+
+const UNSPLASH_API_URL = "https://api.unsplash.com/search/photos";
+const UNSPLASH_ACCESS_KEY = import.meta.env.VITE_UNSPLASH_ACCESS_KEY;
 
 const fetchPhoto = async (query) => {
   try {
-    // Example using a free image placeholder or public image URL (no API required)
-    const response = await axios.get(`https://source.unsplash.com/1600x900/?${query}`);  // Source from Unsplash without the API key
-    return response.request.responseURL || 'https://via.placeholder.com/1000?text=No+Photo+Found';
+    const response = await axios.get(UNSPLASH_API_URL, {
+      params: {
+        query: query,
+        per_page: 6, // Fetch multiple images
+        orientation: "landscape",
+      },
+      headers: {
+        Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
+      },
+    });
+
+    console.log("Unsplash API Response:", response.data); // ✅ Debug API response
+    return Array.isArray(response.data.results) ? response.data.results : [];
   } catch (error) {
-    console.error('Error fetching photo:', error.message);
-    return 'https://via.placeholder.com/1000?text=Error+Fetching+Photo';
+    console.error("Error fetching Unsplash photos:", error);
+    return [];
   }
 };
 
 export default fetchPhoto;
-
-export const PHOTO_REF_URL = 'https://via.placeholder.com/1000?text=Photo+Not+Available';
